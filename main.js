@@ -65,7 +65,7 @@ app.post('/pessoas', async (req,res) => {
 
 app.get('/pessoas/:id', (req,res)=> {
     try {
-        return db.query(`
+        db.query(`
             SELECT * FROM pessoas WHERE id = $1
         `, [req.params.id]).then(results => {
             if(results.rows.length === 0){
@@ -73,9 +73,27 @@ app.get('/pessoas/:id', (req,res)=> {
             } else {
                 res.status(200).send(results.rows[0]) 
             }
-            console.log(results)
         })
     } catch (error) {
         console.error(error)
     }
 })
+
+app.get('/pessoas', (req, res) => {
+    try {
+        console.log(req.query);
+        const termo = '%' + req.query.t + '%'
+        db.query(`
+            SELECT *
+            FROM pessoas
+            WHERE apelido ILIKE $1 OR 
+                nome ILIKE $1 OR
+                EXISTS (SELECT 1 FROM unnest(stack) s WHERE s ILIKE $1)
+            LIMIT 50;
+        `, [termo]).then(results => {
+            res.status(200).send(results.rows);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
