@@ -62,10 +62,20 @@ app.post('/pessoas', async (req,res) => {
         console.error(error)
     }
 })
+
 app.get('/pessoas/:id', (req,res)=> {
     try {
-        return db.query(``)
+        return db.query(`
+            SELECT * FROM pessoas WHERE id = $1
+        `, [req.params.id]).then(results => {
+            if(results.rows.length === 0){
+                res.sendStatus(404)
+            } else {
+                res.status(200).send(results.rows[0]) 
+            }
+            console.log(results)
+        })
     } catch (error) {
-        
+        console.error(error)
     }
 })
