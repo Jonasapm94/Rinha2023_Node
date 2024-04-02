@@ -81,19 +81,30 @@ app.get('/pessoas/:id', (req,res)=> {
 
 app.get('/pessoas', (req, res) => {
     try {
-        console.log(req.query);
-        const termo = '%' + req.query.t + '%'
-        db.query(`
-            SELECT *
-            FROM pessoas
-            WHERE apelido ILIKE $1 OR 
-                nome ILIKE $1 OR
-                EXISTS (SELECT 1 FROM unnest(stack) s WHERE s ILIKE $1)
-            LIMIT 50;
-        `, [termo]).then(results => {
-            res.status(200).send(results.rows);
-        });
+        if (req.query.t === '' || Object.keys(req.query).length === 0){
+            res.sendStatus(400)
+        } else {
+            const termo = '%' + req.query.t + '%'
+            db.query(`
+                SELECT *
+                FROM pessoas
+                WHERE apelido ILIKE $1 OR 
+                    nome ILIKE $1 OR
+                    EXISTS (SELECT 1 FROM unnest(stack) s WHERE s ILIKE $1)
+                LIMIT 50;
+            `, [termo]).then(results => {
+                res.status(200).send(results.rows);
+            });
+        }
     } catch (error) {
         console.error(error);
     }
 });
+
+app.get(`/contagem-pessoas`, (req,res)=> {
+    db.query(`
+        SELECT COUNT(id) FROM pessoas
+    `).then(result => {
+        res.status(200).send(result.rows[0].count)
+    })
+})
