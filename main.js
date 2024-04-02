@@ -102,9 +102,13 @@ app.get('/pessoas', (req, res) => {
 });
 
 app.get(`/contagem-pessoas`, (req,res)=> {
-    db.query(`
+    try {
+        db.query(`
         SELECT COUNT(id) FROM pessoas
     `).then(result => {
         res.status(200).send(result.rows[0].count)
     })
+    } catch (error) {
+        console.error(error)
+    }
 })
