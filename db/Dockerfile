@@ -1,7 +1,7 @@
 FROM postgres
 
 # Copy SQL script to container
-COPY schema.sql /docker-entrypoint-initdb.d/init.sql
+COPY ./schema.sql /docker-entrypoint-initdb.d/init.sql
 
 # Set environment variables for PostgreSQL
 ENV POSTGRES_DB=rinha2023
