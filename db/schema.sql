@@ -23,7 +23,8 @@ DROP TABLE IF EXISTS public.pessoas;
 
 CREATE TABLE IF NOT EXISTS public.pessoas
 (
-    id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    -- id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    id uuid NOT NULL,
     apelido character varying(32) COLLATE pg_catalog."default" NOT NULL,
     nome character varying(100) COLLATE pg_catalog."default" NOT NULL,
     nascimento date NOT NULL,

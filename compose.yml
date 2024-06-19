@@ -1,45 +1,72 @@
-version: '3.5'
 services:
-  api: # server - Instância 01
-    build: 
+  api1: &api
+    # server - Instância 01
+    container_name: rinha_api1
+    build:
       context: ./api
       dockerfile: ./Dockerfile
     depends_on:
       - db
-    expose:
-      - "3000:3000"
+    ports:
+      - "3001:3001"
     deploy:
-      replicas: 2
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.5'
           memory: '0.5GB'
-  
+    network_mode: host
+    environment:
+      - API_PORT=3001
 
+  api2:
+    <<: *api
+    container_name: rinha_api2
+    ports:
+      - "3002:3002"
+    environment:
+      - API_PORT=3002
 
-  nginx: # Load Balancer
+  nginx:
+    # Load Balancer
+    container_name: rinha_nginx
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api
+      - api1
+      - api2
     ports:
-      - "5000:5000"
+      - "9999:9999"
     # restart: always  
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.1'
           memory: '0.5GB'
+    network_mode: host
 
-  db: # Banco de dados
-   build:
-    context: ./db
-    dockerfile: ./Dockerfile
-  #  expose: 
-  #   - "5432"
-   deploy:
+  db:
+    # Banco de dados
+    #  build:
+    #   context: ./db
+    #   dockerfile: ./Dockerfile
+    #  expose: 
+    #   - "5432"
+    container_name: rinha_db
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_USER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rinha2023
+      - POSTGRES_HOST=localhost
+    ports:
+      - "5432:5432"
+    volumes:
+      - /home/jonas/learning/rinha_de_backend/2023_node/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:rw
+    deploy:
       resources:
         limits:
-          cpus: '0.75'
+          cpus: '0.4'
           memory: '1.5GB'
+    network_mode: host

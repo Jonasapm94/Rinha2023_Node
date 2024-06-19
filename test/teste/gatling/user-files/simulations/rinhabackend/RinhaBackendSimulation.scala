@@ -10,7 +10,7 @@ class RinhaBackendSimulation
   extends Simulation {
 
   val httpProtocol = http
-    .baseUrl("http://localhost:5000")
+    .baseUrl("http://localhost:9999")
     .userAgentHeader("Agente do Caos - 2023")
 
   val criacaoEConsultaPessoas = scenario("Criação E Talvez Consulta de Pessoas")

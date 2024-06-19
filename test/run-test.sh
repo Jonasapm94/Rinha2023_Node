@@ -17,4 +17,4 @@ sh $GATLING_BIN_DIR/gatling.sh -rm local -s RinhaBackendSimulation \
 
 sleep 3
 
-curl -v "http://localhost:5000/contagem-pessoas"
+curl -v "http://localhost:9999/contagem-pessoas"
