@@ -1,7 +1,8 @@
 const express = require('express')
 const db = require('./db')
 const app = express()
-const port = 3000
+const port = `${process.env.API_PORT}`
+const { v4: uuidv4 } = require('uuid');
 
 app.use(express.json())
 
@@ -10,72 +11,85 @@ db.query(`Select * from pessoas`).then(resposta => {
 })
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+    res.send('Hello World!')
 })
 
 app.listen(port, () => {
-  console.log(`Api listening on port ${port}`)
+    console.log(`Api listening on port ${port}`)
 })
 
 
-app.post('/pessoas', async (req,res) => {
+app.post('/pessoas', async (req, res) => {
     try {
         const pessoa = req.body
         if (pessoa.apelido === null ||
-            pessoa.nome === null   ||
+            pessoa.nome === null ||
             pessoa.nascimento === null) {
-            const error = new Error("Unprocessable Entity/Content")
-            error.code = '23505'
-            throw error
-        } 
+            // const error = new Error("Unprocessable Entity/Content")
+            // error.code = '23505'
+            // throw error
+            res.status(422).send("Unprocessable Entity/Content")
+        }
         if (typeof pessoa.apelido !== 'string' ||
-        typeof pessoa.nome !== 'string' ||
-        typeof pessoa.nascimento !== 'string' ){
-            const error = new Error("Bad Request")
-            error.code = '400'
-            throw error
+            typeof pessoa.nome !== 'string' ||
+            typeof pessoa.nascimento !== 'string') {
+            // const error = new Error("Bad Request")
+            // error.code = '400'
+            // throw error
+            res.status(400).send("Bad Request")
         }
         let stackValue
-        if (pessoa.stack !== null){
+        if (pessoa.stack !== null) {
             pessoa.stack.forEach(element => {
-                if(typeof element !== 'string'){
-                    const error = new Error("Bad Request")
-                    error.code = '400'
-                    throw error
+                if (typeof element !== 'string') {
+                    // const error = new Error("Bad Request")
+                    // error.code = '400'
+                    // throw error
+                    res.status(400).send("Bad Request")
                 }
             });
             stackValue = pessoa.stack
-        
+
         } else {
             stackValue = []
         }
 
-        const id = await db.query(`
-            INSERT INTO pessoas(apelido, nome, nascimento, stack) 
-            VALUES($1, $2, $3, $4)
+
+
+        db.query(`
+            INSERT INTO pessoas(id, apelido, nome, nascimento, stack) 
+            VALUES($1, $2, $3, $4, $5)
             RETURNING id
-        `, [pessoa.apelido, pessoa.nome, pessoa.nascimento, stackValue])
-        .then(result =>  result.rows[0].id)
-        res.setHeader("Location", `/pessoas/${id}`).status(201).send(id)
+        `, [uuidv4(), pessoa.apelido, pessoa.nome, pessoa.nascimento, stackValue])
+            .then(result => {
+                const id = result.rows[0].id
+                res.setHeader("Location", `/pessoas/${id}`).status(201).send(id)
+            })
+            .catch(error => {
+                if (error.code === '23505') {
+                    res.status(422).send("Unprocessable Entity/Content")
+                } else {
+                    res.status(400).send("Bad Request")
+                }
+            })
     } catch (error) {
-        if (error.code === '23505'){
+        if (error.code === '23505') {
             res.status(422).send("Unprocessable Entity/Content")
         } else {
             res.status(400).send("Bad Request")
         }
-        console.error(error)
     }
 })
 
-app.get('/pessoas/:id', (req,res)=> {
+app.get('/pessoas/:id', (req, res) => {
     try {
         db.query(`
             SELECT * FROM pessoas WHERE id = $1
         `, [req.params.id]).then(results => {
-            if(results.rows.length === 0){
+            if (results.rows.length === 0) {
                 res.sendStatus(404)
             } else {
-                res.status(200).send(results.rows[0]) 
+                res.status(200).send(results.rows[0])
             }
         })
     } catch (error) {
@@ -85,7 +99,7 @@ app.get('/pessoas/:id', (req,res)=> {
 
 app.get('/pessoas', (req, res) => {
     try {
-        if (req.query.t === '' || Object.keys(req.query).length === 0){
+        if (req.query.t === '' || Object.keys(req.query).length === 0) {
             res.sendStatus(400)
         } else {
             const termo = '%' + req.query.t + '%'
@@ -105,14 +119,20 @@ app.get('/pessoas', (req, res) => {
     }
 });
 
-app.get(`/contagem-pessoas`, (req,res)=> {
+app.get(`/contagem-pessoas`, (req, res) => {
     try {
         db.query(`
         SELECT COUNT(id) FROM pessoas
     `).then(result => {
-        res.status(200).send(result.rows[0].count)
-    })
+            res.status(200).send(result.rows[0].count)
+        })
     } catch (error) {
         console.error(error)
     }
+})
+
+app.delete('/pessoas', (req, res) => {
+    console.log('chegou aqui')
+    db.query(` delete from pessoas where 1=1`)
+        .then(() => res.sendStatus(200))
 })
