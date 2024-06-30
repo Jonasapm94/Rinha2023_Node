@@ -3,6 +3,8 @@ const db = require('./db')
 const app = express()
 const port = `${process.env.API_PORT}`
 const { v4: uuidv4 } = require('uuid');
+const cluster = require('cluster')
+const { logger } = require('./logger');
 
 app.use(express.json())
 
@@ -136,3 +138,32 @@ app.delete('/pessoas', (req, res) => {
     db.query(` delete from pessoas where 1=1`)
         .then(() => res.sendStatus(200))
 })
+
+const numForks = Number(process.env.CLUSTER_WORKERS) || 1;
+
+if (cluster.isPrimary && process.env.CLUSTER === 'true') {
+    logger.info(`index.js: Primary ${process.pid} is running`);
+
+    for (let i = 0; i < numForks; i++) {
+        cluster.fork();
+    }
+
+    cluster.on('exit', (worker, code, signal) => {
+        logger.info(`index.js: worker ${worker.process.pid} died: code ${code} signal ${signal}`);
+    });
+} else {
+    const serverApp = app.listen(process.env.API_PORT, () => {
+        logger.info(`index.js:${process.pid}:Listening on ${process.env.API_PORT}`);
+    });
+
+    if (process.env.USE_TIMEOUT === 'true') {
+        serverApp.setTimeout(TIMEOUT)
+        logger.info(`Starting with timeout as ${TIMEOUT}ms`)
+
+        serverApp.on('timeout', (socket) => {
+            logger.warn(`Timing out connection`);
+            socket.end();
+        })
+    }
+}
+

@@ -7,8 +7,8 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - db
-    ports:
-      - "3001:3001"
+    # ports:
+    #   - "3001:3001"
     deploy:
       resources:
         limits:
@@ -17,14 +17,17 @@ services:
     network_mode: host
     environment:
       - API_PORT=3010
-
+      - CLUSTER_WORKERS=5
+      - CLUSTER=true
   api2:
     <<: *api
     container_name: rinha_api2
-    ports:
-      - "3002:3002"
+    # ports:
+    #   - "3002:3002"
     environment:
       - API_PORT=3020
+      - CLUSTER_WORKERS=5
+      - CLUSTER=true
 
   nginx:
     # Load Balancer
